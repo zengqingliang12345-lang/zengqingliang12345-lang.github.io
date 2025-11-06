@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Qingliang Zeng | 曾庆梁</title>
+  <style>
+    html, body {
+      margin: 0;
+      height: 100%;
+      width: 100%;
+      background-color: #ffffff;
+      color: #000000;
+      font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+      overflow: hidden; /* prevent page scrolling */
+      overscroll-behavior: none; /* avoid bounce/overscroll on supported browsers */
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-touch-callout: none;
+      position: relative;
+    }
+    .qingliang {
+      position: absolute;
+      top: 0;
+      left: 0;
+      box-sizing: border-box;
+      white-space: nowrap;
+      display: inline-block;
+      line-height: 1;
+      letter-spacing: 0.05em;
+      font-weight: 300;
+      overflow: visible;
+      transform: translateX(0);
+    }
+
+    /* app container that fills the visual viewport (uses --vh set by JS) */
+    .app {
+      position: fixed;
+      left: 0;
+      top: 0;
+      width: 100vw;
+      height: calc(var(--vh, 1vh) * 100);
+      overflow: hidden;
+      -webkit-overflow-scrolling: auto;
+    }
+    .zeng {
+      position: absolute;
+      bottom:10px;
+      right: -5%;
+      font-size: 20vw;
+      font-weight: 300;
+      letter-spacing: 0.05em;
+    }
+    h2 {
+      position: absolute;
+      bottom: 5px;
+      font-size: 15vw;
+      font-weight: 400;
+      font-family: 'Noto Sans SC', sans-serif;
+    }
+    @media (max-width: 600px) {
+      .zeng {
+        font-size: 24vw;
+        top: 40%;
+        right: -10%;
+      }
+      h2 {
+        font-size: 18vw;
+      }
+    }
+    /* contact email fixed at bottom-left */
+    .contact-email {
+      position: fixed;
+      left: 12px;
+      bottom: 12px;
+      font-size: 14px;
+      color: #000000;
+      text-decoration: none;
+      background: rgba(255,255,255,0.0);
+      padding: 4px 6px;
+      border-radius: 3px;
+      z-index: 9999;
+      font-weight: 400;
+      letter-spacing: 0.01em;
+    }
+    @media (max-width: 600px) {
+      .contact-email { font-size: 12px; left: 8px; bottom: 8px; }
+    }
+  </style>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400&display=swap" rel="stylesheet">
+</head>
+<body>
+  <div class="app">
+    <div id="qingliang" class="qingliang">QINGLIANG</div>
+    <div class="zeng">ZENG</div>
+    <h2>曾庆梁</h2>
+    <!-- fixed contact email in bottom-left -->
+    <a class="contact-email" href="mailto:qingliaz@andrew.cmu.edu">qingliaz@andrew.cmu.edu</a>
+  </div>
+
+  <script>
+    (function(){
+      const el = document.getElementById('qingliang');
+      if(!el) return;
+
+      // Ensure the last character is wrapped so we can measure it precisely.
+      function ensureLastCharSpan(){
+        // if already wrapped, do nothing
+        if(el.querySelector('#lastChar')) return;
+        const text = el.textContent || '';
+        if(text.length === 0) return;
+        const base = text.slice(0, -1);
+        const last = text.slice(-1);
+        el.innerHTML = '';
+        const baseNode = document.createElement('span');
+        baseNode.id = 'qingBase';
+        baseNode.textContent = base;
+        const lastNode = document.createElement('span');
+        lastNode.id = 'lastChar';
+        lastNode.textContent = last;
+        el.appendChild(baseNode);
+        el.appendChild(lastNode);
+      }
+
+      function fitAndAlign(){
+        ensureLastCharSpan();
+        const last = document.getElementById('lastChar');
+        if(!last) return;
+
+        // Reset transform before measuring
+        el.style.transform = 'translateX(0)';
+
+        // Binary-search for the largest font-size (px) that keeps the whole word visible
+        const vw = window.innerWidth;
+        let low = 4, high = 2000;
+        while(high - low > 0.5){
+          const mid = (low + high) / 2;
+          el.style.fontSize = mid + 'px';
+          const w = el.getBoundingClientRect().width;
+          if(w > vw) high = mid; else low = mid;
+        }
+        const chosen = Math.max(4, low);
+        el.style.fontSize = chosen + 'px';
+
+        // Measure positions
+        const elRect = el.getBoundingClientRect();
+        const lastRect = last.getBoundingClientRect();
+        const wordWidth = elRect.width;
+        const lastCenterOffset = (lastRect.left - elRect.left) + lastRect.width / 2;
+
+        // Desired center is midpoint of viewport
+        const desiredCenter = vw * 0.5;
+        let delta = desiredCenter - lastCenterOffset;
+
+        // Clamp delta so the whole word remains visible (left >= 0, right <= vw)
+        const minDelta = 0; // cannot move left of viewport
+        const maxDelta = Math.max(0, vw - wordWidth);
+        const clamped = Math.min(Math.max(delta, minDelta), maxDelta);
+
+        el.style.transform = 'translateX(' + clamped + 'px)';
+      }
+
+      function runAfterFonts(fn){
+        if(document.fonts && document.fonts.ready){
+          document.fonts.ready.then(fn).catch(fn);
+        } else {
+          window.addEventListener('load', fn);
+          setTimeout(fn, 100);
+        }
+      }
+
+      runAfterFonts(fitAndAlign);
+      window.addEventListener('resize', fitAndAlign);
+
+      // Set CSS --vh based on the current visual viewport height so mobile browsers
+      // with dynamic address bars behave like desktop (fixed, not scrollable).
+      function setVh(){
+        const vh = window.innerHeight * 0.01;
+        document.documentElement.style.setProperty('--vh', vh + 'px');
+      }
+      setVh();
+      window.addEventListener('resize', setVh);
+      window.addEventListener('orientationchange', setVh);
+    })();
+  </script>
+</body>
+</html>
